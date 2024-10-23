@@ -1,19 +1,14 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/lukinhas563/gochat/src/router"
 )
 
 func main() {
 	server := gin.Default()
 
-	server.GET("/ping", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
+	router.InitRouter(&server.RouterGroup)
 
 	server.Run()
 }
