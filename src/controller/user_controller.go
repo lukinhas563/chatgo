@@ -7,6 +7,8 @@ import (
 	"github.com/lukinhas563/gochat/src/domain"
 	"github.com/lukinhas563/gochat/src/model/api/request"
 	"github.com/lukinhas563/gochat/src/shared/service/logger"
+	resterr "github.com/lukinhas563/gochat/src/shared/service/restErr"
+	"github.com/lukinhas563/gochat/src/shared/service/validation"
 	"go.uber.org/zap"
 )
 
@@ -35,14 +37,16 @@ func (uc *userController) Register(c *gin.Context) {
 	if err := c.ShouldBindJSON(&userRequest); err != nil {
 		logger.Error("Error to validate user info", err, zap.String("journey", "Register"))
 
-		c.JSON(http.StatusBadRequest, "Fields errors")
+		restError := validation.ValidateUserError(err)
+		c.JSON(restError.Code, restError)
 		return
 	}
 
 	if err := uc.domain.CreateUser(userRequest); err != nil {
 		logger.Error("Error to save user info into database", err, zap.String("journey", "Register"))
 
-		c.JSON(http.StatusInternalServerError, "Error to register")
+		restError := resterr.NewInternalServerError("Error to register. Please, try again later")
+		c.JSON(restError.Code, restError)
 		return
 	}
 
@@ -57,14 +61,16 @@ func (uc *userController) Login(c *gin.Context) {
 	if err := c.ShouldBindJSON(&userLogin); err != nil {
 		logger.Error("Error to validate user info", err, zap.String("journey", "Login"))
 
-		c.JSON(http.StatusBadRequest, "Fields errors")
+		restError := validation.ValidateUserError(err)
+		c.JSON(restError.Code, restError)
 		return
 	}
 
 	if err := uc.domain.LoginUser(userLogin); err != nil {
 		logger.Error("Error to login the user", err, zap.String("journey", "Login"))
 
-		c.JSON(http.StatusBadRequest, "Invalid password")
+		restErr := resterr.NewBadRequestError("Some fields are incorrect")
+		c.JSON(restErr.Code, restErr)
 		return
 	}
 
