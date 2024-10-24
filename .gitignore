@@ -20,4 +20,8 @@ go.work
 # Environments
 .env
 
+# Database
+*.db
+*.db-journal
+
 TODO.md

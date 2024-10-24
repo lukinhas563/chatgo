@@ -1,14 +1,35 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/lukinhas563/gochat/src/model/database/sqlite"
 	"github.com/lukinhas563/gochat/src/router"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		panic("Error loading .env file")
+	}
+	DB_PATH := os.Getenv("DB_PATH")
+	if DB_PATH == "" {
+		panic("Environment DB_PATH not defined")
+	}
+
 	server := gin.Default()
 
-	router.InitRouter(&server.RouterGroup)
+	database := sqlite.NewSqliteDatabase()
+	if err := database.Connect(DB_PATH); err != nil {
+		panic(err)
+	}
+	defer database.Close()
+	fmt.Println("Connected on database")
+
+	router.InitRouter(&server.RouterGroup, database)
 
 	server.Run()
 }
