@@ -1,22 +1,28 @@
 package controller
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lukinhas563/gochat/src/domain"
 	"github.com/lukinhas563/gochat/src/model/api/request"
-	"github.com/lukinhas563/gochat/src/model/database/sqlite"
 )
 
-type userController struct {
-	database sqlite.SqliteDatabase
+type UserController interface {
+	Register(*gin.Context)
+	Login(*gin.Context)
+	Confirm(*gin.Context)
+	Send(*gin.Context)
+	Reset(*gin.Context)
 }
 
-func NewUserController(database sqlite.SqliteDatabase) *userController {
+type userController struct {
+	domain domain.UserDomain
+}
+
+func NewUserController(domain domain.UserDomain) *userController {
 	return &userController{
-		database: database,
+		domain: domain,
 	}
 }
 
@@ -27,13 +33,8 @@ func (uc *userController) Register(c *gin.Context) {
 		return
 	}
 
-	hash := md5.New()
-	defer hash.Reset()
-	hash.Write([]byte(userRequest.Password))
-	userRequest.Password = hex.EncodeToString(hash.Sum(nil))
-
-	if err := uc.database.InsertUser(userRequest); err != nil {
-		c.JSON(http.StatusInternalServerError, "Error to register the user")
+	if err := uc.domain.CreateUser(userRequest); err != nil {
+		c.JSON(http.StatusInternalServerError, "Error to register")
 		return
 	}
 
@@ -47,18 +48,7 @@ func (uc *userController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.database.GetByUsername(userLogin.Username)
-	if err != nil {
-		c.JSON(http.StatusNotFound, "User not registered")
-		return
-	}
-
-	hash := md5.New()
-	defer hash.Reset()
-	hash.Write([]byte(userLogin.Password))
-	userLogin.Password = hex.EncodeToString(hash.Sum(nil))
-
-	if user.Password != userLogin.Password {
+	if err := uc.domain.LoginUser(userLogin); err != nil {
 		c.JSON(http.StatusBadRequest, "Invalid password")
 		return
 	}

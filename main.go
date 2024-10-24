@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/lukinhas563/gochat/src/controller"
+	"github.com/lukinhas563/gochat/src/domain"
 	"github.com/lukinhas563/gochat/src/model/database/sqlite"
 	"github.com/lukinhas563/gochat/src/router"
 )
@@ -29,7 +31,10 @@ func main() {
 	defer database.Close()
 	fmt.Println("Connected on database")
 
-	router.InitRouter(&server.RouterGroup, database)
+	userDomain := domain.NewUserDomain(database)
+	userController := controller.NewUserController(userDomain)
+
+	router.InitRouter(&server.RouterGroup, userController)
 
 	server.Run()
 }
