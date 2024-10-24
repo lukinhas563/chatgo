@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +9,7 @@ import (
 	"github.com/lukinhas563/gochat/src/domain"
 	"github.com/lukinhas563/gochat/src/model/database/sqlite"
 	"github.com/lukinhas563/gochat/src/router"
+	"github.com/lukinhas563/gochat/src/shared/service/logger"
 )
 
 func main() {
@@ -22,6 +22,8 @@ func main() {
 		panic("Environment DB_PATH not defined")
 	}
 
+	logger.Info("About to start server application")
+
 	server := gin.Default()
 
 	database := sqlite.NewSqliteDatabase()
@@ -29,7 +31,7 @@ func main() {
 		panic(err)
 	}
 	defer database.Close()
-	fmt.Println("Connected on database")
+	logger.Info("Connected on database")
 
 	userDomain := domain.NewUserDomain(database)
 	userController := controller.NewUserController(userDomain)
