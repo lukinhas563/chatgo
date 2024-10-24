@@ -7,22 +7,25 @@ import (
 
 	"github.com/lukinhas563/gochat/src/model/api/request"
 	"github.com/lukinhas563/gochat/src/model/database/sqlite"
+	"github.com/lukinhas563/gochat/src/shared/service"
 	"github.com/lukinhas563/gochat/src/shared/service/logger"
 	"go.uber.org/zap"
 )
 
 type UserDomain interface {
 	CreateUser(request.UserRegister) error
-	LoginUser(request.UserLogin) error
+	LoginUser(request.UserLogin) (string, error)
 }
 
 type userDomain struct {
 	database sqlite.SqliteDatabase
+	token    service.TokenService
 }
 
-func NewUserDomain(database sqlite.SqliteDatabase) UserDomain {
+func NewUserDomain(database sqlite.SqliteDatabase, tokenService service.TokenService) UserDomain {
 	return &userDomain{
 		database: database,
+		token:    tokenService,
 	}
 }
 
@@ -51,22 +54,29 @@ func (ud *userDomain) CreateUser(userRequest request.UserRegister) error {
 	return nil
 }
 
-func (ud *userDomain) LoginUser(userLogin request.UserLogin) error {
+func (ud *userDomain) LoginUser(userLogin request.UserLogin) (string, error) {
 	logger.Info("Init LoginUser from UserDomain", zap.String("journey", "LoginUser"))
 
 	user, err := ud.database.GetByUsername(userLogin.Username)
 	if err != nil {
 		logger.Error("Error to found user into database", err, zap.String("journey", "LoginUser"))
 
-		return err
+		return "", err
 	}
 
 	userLogin.Password = ud.encrypt(userLogin.Password)
 	if user.Password != userLogin.Password {
 		logger.Error("Error to validate the user's password", err, zap.String("journey", "LoginUser"))
 
-		return fmt.Errorf("Invalid password")
+		return "", fmt.Errorf("Invalid password")
 	}
 
-	return nil
+	token, err := ud.token.GenerateToken(*user)
+	if err != nil {
+		logger.Error("Error to generate token", err, zap.String("journey", "LoginUser"))
+
+		return "", err
+	}
+
+	return token, nil
 }

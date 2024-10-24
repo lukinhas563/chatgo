@@ -66,18 +66,17 @@ func (uc *userController) Login(c *gin.Context) {
 		return
 	}
 
-	if err := uc.domain.LoginUser(userLogin); err != nil {
+	token, err := uc.domain.LoginUser(userLogin)
+	if err != nil {
 		logger.Error("Error to login the user", err, zap.String("journey", "Login"))
 
-		restErr := resterr.NewBadRequestError("Some fields are incorrect")
+		restErr := resterr.NewInternalServerError("Error to signin")
 		c.JSON(restErr.Code, restErr)
 		return
 	}
 
 	logger.Info("User signined successfully", zap.String("journey", "Login"))
-	c.JSON(http.StatusOK, gin.H{
-		"RESULT": "User Login",
-	})
+	c.JSON(http.StatusOK, token)
 }
 
 func (uc *userController) Confirm(c *gin.Context) {

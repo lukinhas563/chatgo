@@ -9,6 +9,7 @@ import (
 	"github.com/lukinhas563/gochat/src/domain"
 	"github.com/lukinhas563/gochat/src/model/database/sqlite"
 	"github.com/lukinhas563/gochat/src/router"
+	"github.com/lukinhas563/gochat/src/shared/service"
 	"github.com/lukinhas563/gochat/src/shared/service/logger"
 )
 
@@ -17,8 +18,10 @@ func main() {
 	if err != nil {
 		panic("Error loading .env file")
 	}
+
 	DB_PATH := os.Getenv("DB_PATH")
-	if DB_PATH == "" {
+	JWT_SECRET_KEY := os.Getenv("JWT_SECRET_KEY")
+	if DB_PATH == "" || JWT_SECRET_KEY == "" {
 		panic("Environment DB_PATH not defined")
 	}
 
@@ -33,7 +36,8 @@ func main() {
 	defer database.Close()
 	logger.Info("Connected on database")
 
-	userDomain := domain.NewUserDomain(database)
+	tokenService := service.NewTokenService(JWT_SECRET_KEY)
+	userDomain := domain.NewUserDomain(database, tokenService)
 	userController := controller.NewUserController(userDomain)
 
 	router.InitRouter(&server.RouterGroup, userController)
