@@ -41,6 +41,28 @@ func (uc *userController) Register(c *gin.Context) {
 }
 
 func (uc *userController) Login(c *gin.Context) {
+	var userLogin request.UserLogin
+	if err := c.ShouldBindJSON(&userLogin); err != nil {
+		c.JSON(http.StatusBadRequest, "Fields errors")
+		return
+	}
+
+	user, err := uc.database.GetByUsername(userLogin.Username)
+	if err != nil {
+		c.JSON(http.StatusNotFound, "User not registered")
+		return
+	}
+
+	hash := md5.New()
+	defer hash.Reset()
+	hash.Write([]byte(userLogin.Password))
+	userLogin.Password = hex.EncodeToString(hash.Sum(nil))
+
+	if user.Password != userLogin.Password {
+		c.JSON(http.StatusBadRequest, "Invalid password")
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"RESULT": "User Login",
 	})

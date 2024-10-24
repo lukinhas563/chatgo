@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lukinhas563/gochat/src/model/api/request"
+	"github.com/lukinhas563/gochat/src/model/api/response"
 	_ "modernc.org/sqlite"
 )
 
@@ -12,6 +13,7 @@ type SqliteDatabase interface {
 	Connect(string) error
 	Close() error
 	InsertUser(request.UserRegister) error
+	GetByUsername(string) (*response.UserLogin, error)
 }
 type sqliteDatabase struct {
 	database *sql.DB
@@ -57,4 +59,20 @@ func (sqlite *sqliteDatabase) InsertUser(user request.UserRegister) error {
 	}
 
 	return fmt.Errorf("Database not connected")
+}
+
+func (sqlite *sqliteDatabase) GetByUsername(username string) (*response.UserLogin, error) {
+	query := "SELECT username, email, password FROM users WHERE username = ?"
+	row := sqlite.database.QueryRow(query, username)
+
+	var user response.UserLogin
+	if err := row.Scan(&user.Username, &user.Email, &user.Password); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+
+		return nil, err
+	}
+
+	return &user, nil
 }
