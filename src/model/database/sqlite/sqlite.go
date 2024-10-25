@@ -24,6 +24,10 @@ func NewSqliteDatabase() SqliteDatabase {
 }
 
 func (sqlite *sqliteDatabase) Connect(path string) error {
+	if path == "" {
+		return fmt.Errorf("Path not available")
+	}
+
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return err
