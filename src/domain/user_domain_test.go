@@ -42,10 +42,20 @@ func (m *mockTokenService) GenerateToken(user response.UserLogin) (string, error
 	return args.String(0), args.Error(1)
 }
 
+type mockEmailService struct {
+	mock.Mock
+}
+
+func (m *mockEmailService) Send(recipient, message string) error {
+	args := m.Called(recipient, message)
+	return args.Error(0)
+}
+
 func TestUserDomain_CreateUser(t *testing.T) {
 	mockDB := new(mockDatabase)
 	mockToken := new(mockTokenService)
-	userDomain := NewUserDomain(mockDB, mockToken)
+	mockEmail := new(mockEmailService)
+	userDomain := NewUserDomain(mockDB, mockToken, mockEmail)
 
 	user := request.UserRegister{
 		Username: "testusername",
@@ -64,7 +74,8 @@ func TestUserDomain_CreateUser(t *testing.T) {
 func TestUserDOmain_LoginUser(t *testing.T) {
 	mockDB := new(mockDatabase)
 	mockToken := new(mockTokenService)
-	domainService := NewUserDomain(mockDB, mockToken)
+	mockEmail := new(mockEmailService)
+	domainService := NewUserDomain(mockDB, mockToken, mockEmail)
 
 	user := request.UserLogin{
 		Username: "testusername",

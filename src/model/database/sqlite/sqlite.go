@@ -58,7 +58,6 @@ func (sqlite *sqliteDatabase) InsertUser(user request.UserRegister) error {
 			return err
 		}
 
-		fmt.Println("User inserted successfully")
 		return nil
 	}
 

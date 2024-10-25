@@ -8,6 +8,7 @@ import (
 	"github.com/lukinhas563/gochat/src/model/api/request"
 	"github.com/lukinhas563/gochat/src/model/database/sqlite"
 	"github.com/lukinhas563/gochat/src/shared/service"
+	"github.com/lukinhas563/gochat/src/shared/service/email"
 	"github.com/lukinhas563/gochat/src/shared/service/logger"
 	"go.uber.org/zap"
 )
@@ -20,12 +21,14 @@ type UserDomain interface {
 type userDomain struct {
 	database sqlite.SqliteDatabase
 	token    service.TokenService
+	email    email.EmailService
 }
 
-func NewUserDomain(database sqlite.SqliteDatabase, tokenService service.TokenService) UserDomain {
+func NewUserDomain(database sqlite.SqliteDatabase, tokenService service.TokenService, email email.EmailService) UserDomain {
 	return &userDomain{
 		database: database,
 		token:    tokenService,
+		email:    email,
 	}
 }
 
@@ -50,6 +53,18 @@ func (ud *userDomain) CreateUser(userRequest request.UserRegister) error {
 
 		return err
 	}
+
+	go func() {
+		logger.Info("Init EmailService from UserDomain", zap.String("journey", "CreateUser"))
+
+		if err := ud.email.Send(userRequest.Email, "Welcome to gochat!"); err != nil {
+			logger.Error("Failed to send welcome email", err, zap.String("journey", "CreateUser"))
+
+			return
+		}
+
+		logger.Info("Email sended successfully", zap.String("journey", "CreateUser"))
+	}()
 
 	return nil
 }
